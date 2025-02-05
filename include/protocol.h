@@ -16,23 +16,17 @@ enum ProtocolTag
     PT_NULL = 5,
     PT_ENUM = 10,
     PT_STR = 12,
-    PT_SEQ = 48,
-    PT_TIME = 24
+    PT_TIME = 24,
+    PT_SEQ = 48
 };
 
 typedef struct ProtocolHeader
 {
     uint8_t packet_type;
     uint8_t version;
-    uint16_t senderID;
+    uint16_t sender_id;
     uint16_t payload_len;
 } header_t;
-
-typedef struct ChatMessage
-{
-    char timestamp[TIMESTAMP_LEN];
-    char *content;
-} chat_message_t;
 
 enum UserStatus
 {
@@ -43,21 +37,15 @@ enum UserStatus
 
 typedef struct User
 {
-    uint32_t id;
-    uint8_t *name;
+    uint16_t id;
+    char *name;
     enum UserStatus status;
 } user_t;
 
 typedef struct UserList
 {
-user_t users[];
+    user_t users[];
 } user_list_t;
-
-typedef struct ProtocolError
-{
-    uint8_t code;
-    uint8_t *message;
-} error_t;
 
 enum Packet_Type
 {
@@ -85,25 +73,26 @@ typedef struct SYS_Success
 typedef struct SYS_Error
 {
     uint8_t code;
+    char *msg;
 } sys_error_res;
 
 typedef struct ACC_Login
 {
-    uint8_t *username;
-    uint8_t *password;
+    char *username;
+    char *password;
 } acc_login_req;
 
 typedef struct ACC_Logout acc_logout_req; /* no fields */
 
 typedef struct ACC_Login_Success
 {
-    uint16_t userID;
+    uint16_t user_id;
 } acc_login_res;
 
 typedef struct ACC_Create
 {
-    uint8_t *username;
-    uint8_t *password;
+    char *username;
+    char *password;
 } acc_create_req;
 
 enum ACC_Edit_Type
@@ -115,13 +104,14 @@ enum ACC_Edit_Type
 typedef struct ACC_Edit
 {
     enum ACC_Edit_Type field;
-    uint8_t *value;
+    char *value;
 } acc_edit_req;
 
 typedef struct CHT_Send
 {
     uint8_t groupID;
-    chat_message_t content;
+    char *timestamp;
+    char *content;
 } cht_send_t;
 
 enum UserList_Filter

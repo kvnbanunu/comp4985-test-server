@@ -71,13 +71,15 @@ static void decode_uint16(const uint8_t buf[], uint16_t *dst, const int pos)
     *dst = ntohs(copy);
 }
 
-static void decode_str(const uint8_t buf[], char *dst, const int pos)
+/* need to free after */
+static int decode_str(const uint8_t buf[], char *dst, const int pos)
 {
     int len = buf[pos + 1];
     int start = pos + 2;
     dst = (char *)malloc(len + 1);
-    memcpy(dst, buf + pos, len);
+    memcpy(dst, buf + start, len);
     dst[len] = '\0';
+    return 1 + 1 + len;
 }
 
 void e_header(uint8_t buf[], const header_t *header)
@@ -178,12 +180,38 @@ void d_header(const uint8_t buf[], header_t *header)
     header->payload_len = ntohs(copy);
 }
 
-void d000_sys_success(const uint8_t buf[], sys_success_res *res, const uint8_t version);
-void d001_sys_error(const uint8_t buf[], sys_error_res *res, const uint8_t version);
-void d010_acc_login(const uint8_t buf[], acc_login_req *req, const uint8_t version);
-void d011_acc_login_success(const uint8_t buf[], acc_login_res *res, const uint8_t version);
-void d012_acc_logout(const uint8_t buf[], acc_logout_req *req, const uint8_t version);
-void d013_acc_create(const uint8_t buf[], acc_create_req *req, const uint8_t version);
+void d000_sys_success(const uint8_t buf[], sys_success_res *res, const uint8_t version)
+{
+    // Not needed
+}
+
+void d001_sys_error(const uint8_t buf[], sys_error_res *res, const uint8_t version)
+{
+    // Not needed
+}
+
+void d010_acc_login(const uint8_t buf[], acc_login_req *req)
+{
+    /* NEED TO FREE */
+    int pos = decode_str(buf, &req->username, HEADERLEN);
+    decode_str(buf, &req->password, pos + HEADERLEN);
+}
+
+void d011_acc_login_success(const uint8_t buf[], acc_login_res *res)
+{
+    // Not needed
+}
+
+void d012_acc_logout(const uint8_t buf[], acc_logout_req *req, const uint8_t version)
+{
+    // Not needed
+}
+
+void d013_acc_create(const uint8_t buf[], acc_create_req *req, const uint8_t version)
+{
+    
+}
+
 void d014_acc_edit(const uint8_t buf[], acc_edit_req *req, const uint8_t version);
 void d020_cht_send(const uint8_t buf[], cht_send_t *msg, const uint8_t version);
 void d030_lst_get(const uint8_t buf[], lst_get_req *req, const uint8_t version);
