@@ -5,12 +5,19 @@
 
 #define P_BUFMAX 65541 /* 2 bytes - 1 + header size (6 bytes) */
 #define TIMESTAMP_LEN 15 /* YYYYMMDDhhmmssZ */
+#define UTF8STRMAXLEN 255
+#define HEADERLEN 6
+#define SYSID 0
 
 enum ProtocolTag
 {
     PT_BOOL = 1,
     PT_INT = 2,
-    PT_NULL = 5
+    PT_NULL = 5,
+    PT_ENUM = 10,
+    PT_STR = 12,
+    PT_SEQ = 48,
+    PT_TIME = 24
 };
 
 typedef struct ProtocolHeader
@@ -18,13 +25,13 @@ typedef struct ProtocolHeader
     uint8_t packet_type;
     uint8_t version;
     uint16_t senderID;
-    uint16_t packet_len;
+    uint16_t payload_len;
 } header_t;
 
 typedef struct ChatMessage
 {
-    uint8_t timestamp[TIMESTAMP_LEN];
-    uint8_t *content;
+    char timestamp[TIMESTAMP_LEN];
+    char *content;
 } chat_message_t;
 
 enum UserStatus
@@ -158,37 +165,35 @@ typedef struct HST_Get
 
 /* Placeholder structs -----END */
 
-int e_header(uint8_t buf[], const header_t *header);
-int e000_sys_success(uint8_t buf[], const sys_success_res *res);
-int e001_sys_error(uint8_t buf[], const sys_error_res *res);
-int e010_acc_login(uint8_t buf[], const acc_login_req *req);
-int e011_acc_login_success(uint8_t buf[], const acc_login_res *res);
-int e012_acc_logout(uint8_t buf[], const acc_logout_req *req);
-int e013_acc_create(uint8_t buf[], const acc_create_req *req);
-int e014_acc_edit(uint8_t buf[], const acc_edit_req *req);
-int e020_cht_send(uint8_t buf[], const cht_send_t *msg);
-int e030_lst_get(uint8_t buf[], const lst_get_req *req);
-int e031_lst_response(uint8_t buf[], const lst_res *res);
-int e040_grp_join(uint8_t buf[], const grp_join_req *req);
-int e041_grp_exit(uint8_t buf[], const grp_exit_req *req);
-int e042_grp_create(uint8_t buf[], const grp_create_req *req);
-int e050_hst_get(uint8_t buf[], const hst_get_req *req);
-int e_packet(uint8_t buf[P_BUFMAX], const uint8_t header[], const uint8_t payload[]);
-int d_header(const uint8_t buf[], header_t *header);
-int d000_sys_success(const uint8_t buf[], sys_success_res *res);
-int d001_sys_error(const uint8_t buf[], sys_error_res *res);
-int d010_acc_login(const uint8_t buf[], acc_login_req *req);
-int d011_acc_login_success(const uint8_t buf[], acc_login_res *res);
-int d012_acc_logout(const uint8_t buf[], acc_logout_req *req);
-int d013_acc_create(const uint8_t buf[], acc_create_req *req);
-int d014_acc_edit(const uint8_t buf[], acc_edit_req *req);
-int d020_cht_send(const uint8_t buf[], cht_send_t *msg);
-int d030_lst_get(const uint8_t buf[], lst_get_req *req);
-int d031_lst_response(const uint8_t buf[], lst_res *res);
-int d040_grp_join(const uint8_t buf[], grp_join_req *req);
-int d041_grp_exit(const uint8_t buf[], grp_exit_req *req);
-int d042_grp_create(const uint8_t buf[], grp_create_req *req);
-int d050_hst_get(const uint8_t buf[], hst_get_req *req);
-int d_packet(const uint8_t buf[P_BUFMAX], uint8_t header[], uint8_t payload[]);
+void e_header(uint8_t buf[], const header_t *header);
+void e000_sys_success(uint8_t buf[], const sys_success_res *res, const uint8_t version);
+void e001_sys_error(uint8_t buf[], const sys_error_res *res, const uint8_t version);
+void e010_acc_login(uint8_t buf[], const acc_login_req *req, const uint8_t version);
+void e011_acc_login_success(uint8_t buf[], const acc_login_res *res, const uint8_t version);
+void e012_acc_logout(uint8_t buf[], const acc_logout_req *req, const uint8_t version);
+void e013_acc_create(uint8_t buf[], const acc_create_req *req, const uint8_t version);
+void e014_acc_edit(uint8_t buf[], const acc_edit_req *req, const uint8_t version);
+void e020_cht_send(uint8_t buf[], const cht_send_t *msg, const uint8_t version, const uint16_t senderID);
+void e030_lst_get(uint8_t buf[], const lst_get_req *req, const uint8_t version);
+void e031_lst_response(uint8_t buf[], const lst_res *res, const uint8_t version);
+void e040_grp_join(uint8_t buf[], const grp_join_req *req, const uint8_t version);
+void e041_grp_exit(uint8_t buf[], const grp_exit_req *req, const uint8_t version);
+void e042_grp_create(uint8_t buf[], const grp_create_req *req, const uint8_t version);
+void e050_hst_get(uint8_t buf[], const hst_get_req *req, const uint8_t version);
+void d_header(const uint8_t buf[], header_t *header);
+void d000_sys_success(const uint8_t buf[], sys_success_res *res, const uint8_t version);
+void d001_sys_error(const uint8_t buf[], sys_error_res *res, const uint8_t version);
+void d010_acc_login(const uint8_t buf[], acc_login_req *req, const uint8_t version);
+void d011_acc_login_success(const uint8_t buf[], acc_login_res *res, const uint8_t version);
+void d012_acc_logout(const uint8_t buf[], acc_logout_req *req, const uint8_t version);
+void d013_acc_create(const uint8_t buf[], acc_create_req *req, const uint8_t version);
+void d014_acc_edit(const uint8_t buf[], acc_edit_req *req, const uint8_t version);
+void d020_cht_send(const uint8_t buf[], cht_send_t *msg, const uint8_t version);
+void d030_lst_get(const uint8_t buf[], lst_get_req *req, const uint8_t version);
+void d031_lst_response(const uint8_t buf[], lst_res *res, const uint8_t version);
+void d040_grp_join(const uint8_t buf[], grp_join_req *req, const uint8_t version);
+void d041_grp_exit(const uint8_t buf[], grp_exit_req *req, const uint8_t version);
+void d042_grp_create(const uint8_t buf[], grp_create_req *req, const uint8_t version);
+void d050_hst_get(const uint8_t buf[], hst_get_req *req, const uint8_t version);
 
 #endif // !DEBUG
