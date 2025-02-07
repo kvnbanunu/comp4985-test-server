@@ -1,100 +1,31 @@
-# template-c Repository Guide
+# COMP4985 Test Server
+This program acts as a 'server' to test packets sent from a chat client program.
 
-Welcome to the `c template` repository. This guide will help you set up and run the provided scripts.
+This program will print the contents of the decoded packet as well as send a success or error response.
 
-## **Table of Contents**
+## Installation
 
-1. [Cloning the Repository](#cloning-the-repository)
-2. [Prerequisites](#Prerequisites)
-3. [Running the `generate-cmakelists.sh` Script](#running-the-generate-cmakelistssh-script)
-4. [Running the `change-compiler.sh` Script](#running-the-change-compilersh-script)
-5. [Running the `build.sh` Script](#running-the-buildsh-script)
-5. [Running the `build-all.sh` Script](#running-the-build-allsh-script)
-6. [Copy the template to start a new project](#copy-the-template-to-start-a-new-project)
-
-## **Cloning the Repository**
-
-Clone the repository using the following command:
-
-```bash
-git clone https://github.com/programming101dev/template-c.git
+Build using Make:
+```sh
+make build
 ```
 
-Navigate to the cloned directory:
-
-```bash
-cd template-c
+Build using D'Arcy's build system:
+1. Create links to his files
+```sh
+./create-links.sh <work/programming101dev/scripts/>
 ```
-
-Ensure the scripts are executable:
-
-```bash
-chmod +x *.sh
-```
-
-## **Prerequisites**
-
-- to ensure you have all of the required tools installed, run:
-```bash
-./check-env.sh
-```
-
-If you are missing tools follow these [instructions](https://docs.google.com/document/d/1ZPqlPD1mie5iwJ2XAcNGz7WeA86dTLerFXs9sAuwCco/edit?usp=drive_link).
-
-## **Running the generate-cmakelists.sh Script**
-
-You will need to create the CMakeLists.txt file:
-
-```bash
+2. Generate the CMakefiles
+```sh
 ./generate-cmakelists.sh
 ```
-
-## **Running the change-compiler.sh Script**
-
-Tell CMake which compiler you want to use:
-
-```bash
-./change-compiler.sh -c <compiler>
-```
-
-To the see the list of possible compilers:
-
-```bash
-cat supported_cxx_compilers.txt
-```
-
-## **Running the build.sh Script**
-
-To build the program run:
-
-```bash
-./build.sh
-```
-
-## **Running the build-all.sh Script**
-
-To build the program with all compilers run:
-
-```bash
+3. Build
+```sh
 ./build-all.sh
 ```
 
-## **Copy the template to start a new project**
+## Usage
 
-To create a new project from the template, run:
-
-```bash
-./copy-template.sh <desitnation directory>
+```sh
+./build/server
 ```
-
-This will copy all of the files needed to start a new project.
-
-1. Edit the files.txt
-2. run ./generate-cmakelists.sh
-3. run ./change-compiler.sh -c <compiler>
-4. run ./build.sh
-
-The files.txt file contains:
-<executable> <source files> <header files> <libraries>
-
-When you need to add/removes files to/from the project you must rerun the 4 steps above. 
