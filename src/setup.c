@@ -72,6 +72,12 @@ int setup_server(struct sockaddr_in *addr)
         goto fail;
     }
 
+    if(listen(fd, SOMAXCONN) < 0)
+    {
+        perror("listen");
+        goto fail;
+    }
+
     if(getsockname(fd, (struct sockaddr *)addr, &addr_len) == -1)
     {
         perror("getsockname");
