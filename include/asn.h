@@ -64,7 +64,8 @@ typedef struct header_t
     uint16_t payload_len;
 } header_t;
 
-int decode_packet(const uint8_t buf[], header_t *header);
+void decode_header(const uint8_t buf[], header_t *header);
+int decode_packet(const uint8_t buf[], const header_t *header);
 int encode_sys_success_res(uint8_t buf[], uint8_t packet_type);
 int encode_sys_error_res(uint8_t buf[], int err);
 int encode_acc_login_success_res(uint8_t buf[], uint16_t user_id);

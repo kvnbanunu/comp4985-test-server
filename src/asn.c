@@ -68,7 +68,8 @@ static int decode_str(const uint8_t buf[], int pos)
         fprintf(stderr, "Field length of Zero\n");
         return FIELDLENGTHOFZERO;
     }
-    msg      = (char *)malloc((size_t)len + 1);
+    msg = (char *)malloc((size_t)len + 1);
+    memcpy(msg, buf + pos + 1, (size_t)len);
     msg[len] = '\0';
     printf("string: %s\n", msg);
     free(msg);
@@ -84,14 +85,15 @@ static int decode_time(const uint8_t buf[], int pos)
         fprintf(stderr, "Invalid Integer Length: %d\n", len);
         return INVALIDINTEGERLENGTH;
     }
-    time      = (char *)malloc((size_t)len + 1);
+    time = (char *)malloc((size_t)len + 1);
+    memcpy(time, buf + pos + 1, (size_t)len);
     time[len] = '\0';
     printf("time: %s\n", time);
     free(time);
     return len + 1;
 }
 
-static void decode_header(const uint8_t buf[], header_t *header)
+void decode_header(const uint8_t buf[], header_t *header)
 {
     int      pos = 0;
     uint16_t sender_id;
@@ -124,7 +126,7 @@ static int check_header(const header_t *header)
 
     h = header->version;
 
-    if(h != 1)
+    if(h != CURRVER)
     {
         fprintf(stderr, "Unsupported Version: %u\n", h);
         return UNSUPPORTEDVERSION;
@@ -134,7 +136,7 @@ static int check_header(const header_t *header)
 
 static void print_header(const header_t *header)
 {
-    printf("HEADER\nPacket Type: %u\nVersion: %u\nSender ID: %u\nPayload Length: %u\n", header->packet_type, header->version, header->sender_id, header->payload_len);
+    printf("***HEADER***\nPacket Type: %u\nVersion: %u\nSender ID: %u\nPayload Length: %u\n***PAYLOAD***\n", header->packet_type, header->version, header->sender_id, header->payload_len);
 }
 
 /* returns # of bytes decoded */
@@ -178,16 +180,15 @@ static void encode_header(uint8_t buf[], const header_t *header)
     memcpy(buf + pos, &copy, u16sz);
 }
 
-int decode_packet(const uint8_t buf[], header_t *header)
+int decode_packet(const uint8_t buf[], const header_t *header)
 {
     int header_res;
-    decode_header(buf, header);
+    print_header(header);
     header_res = check_header(header);
     if(header_res < 0)
     {
         return header_res;
     }
-    print_header(header);
     if(header->payload_len > 0)
     {
         int remaining = header->payload_len;

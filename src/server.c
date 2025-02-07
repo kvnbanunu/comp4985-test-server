@@ -115,11 +115,16 @@ static void process_req(const data_t *d)
     uint8_t  buf[PACKETLEN];
     int      result;
 
+    read(d->cfd, buf, HEADERLEN);
+    decode_header(buf, &header);
+
+    read(d->cfd, buf + HEADERLEN, header.payload_len);
     result = decode_packet(buf, &header);
+
+    memset(buf, 0, PACKETLEN);
     if(result < 0)
     {
         send_sys_error(buf, d->cfd, result);
-        return;
     }
 
     if(header.packet_type == ACC_LOGIN)
