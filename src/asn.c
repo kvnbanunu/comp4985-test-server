@@ -29,7 +29,7 @@ static int decode_uint16(uint8_t buf[], int pos)
 }
 
 /* following a ASN_INT tag, pos would land on len */
-int decode_int(uint8_t buf[], int pos)
+static int decode_int(uint8_t buf[], int pos)
 {
     int len = buf[pos];
     if (len < 1)
@@ -53,14 +53,14 @@ int decode_int(uint8_t buf[], int pos)
     return (res > 0) ? res + 1 : res;
 }
 
-int decode_enum(uint8_t buf[], int pos)
+static int decode_enum(uint8_t buf[], int pos)
 {
     printf("Enum: %u\n", buf[pos + 1]);
     return 1;
 }
 
 /* following ASN_STR tag, pos would land on len */
-int decode_str(uint8_t buf[], int pos)
+static int decode_str(uint8_t buf[], int pos)
 {
     int len = buf[pos];
     if (len < 1)
@@ -75,7 +75,7 @@ int decode_str(uint8_t buf[], int pos)
     return 1 + len;
 }
 
-int decode_time(uint8_t buf[], int pos)
+static int decode_time(uint8_t buf[], int pos)
 {
     int len = buf[pos];
     if (len != TIMESTRLEN)
@@ -90,7 +90,7 @@ int decode_time(uint8_t buf[], int pos)
     return 1 + len;
 }
 
-void decode_header(uint8_t buf[], header_t *header)
+static void decode_header(uint8_t buf[], header_t *header)
 {
     int pos = 0;
     int sender_id;
@@ -111,7 +111,7 @@ void decode_header(uint8_t buf[], header_t *header)
     header->payload_len = ntohs(payload_len);
 }
 
-int check_header(header_t *header)
+static int check_header(header_t *header)
 {
     uint8_t h = header->packet_type;
 
@@ -135,7 +135,7 @@ int check_header(header_t *header)
     }
 }
 
-void print_header(header_t *header)
+static void print_header(header_t *header)
 {
     printf("HEADER\nPacket Type: %u\nVersion: %u\nSender ID: %u\nPayload Length: %u\n",
            header->packet_type, header->version, header->sender_id, header->payload_len);
@@ -167,6 +167,21 @@ static int decode_field(uint8_t buf[], int pos)
     return (res > 0) ? res + 1 : res;
 }
 
+static void encode_header(uint8_t buf[], header_t *header)
+{
+    uint16_t copy;
+    int pos = 1;
+    int u16sz = (int)sizeof(uint16_t);
+    memcpy(buf, &header->packet_type, 1);
+    memcpy(buf + pos, &header->version, 1);
+    pos++;
+    copy = htons(header->sender_id);
+    memcpy(buf + pos, &copy, u16sz);
+    pos += u16sz;
+    copy = htons(header->payload_len);
+    memcpy(buf + pos, &copy, u16sz);
+}
+
 int decode_packet(uint8_t buf[], header_t *header)
 {
     int header_res;
@@ -195,21 +210,6 @@ int decode_packet(uint8_t buf[], header_t *header)
     return 0;
 }
 
-void encode_header(uint8_t buf[], header_t *header)
-{
-    uint16_t copy;
-    int pos = 1;
-    int u16sz = (int)sizeof(uint16_t);
-    memcpy(buf, &header->packet_type, 1);
-    memcpy(buf + pos, &header->version, 1);
-    pos++;
-    copy = htons(header->sender_id);
-    memcpy(buf + pos, &copy, u16sz);
-    pos += u16sz;
-    copy = htons(header->payload_len);
-    memcpy(buf + pos, &copy, u16sz);
-}
-
 /* returns total packet length */
 int encode_sys_success_res(uint8_t buf[], uint8_t packet_type)
 {
@@ -228,15 +228,55 @@ int encode_sys_success_res(uint8_t buf[], uint8_t packet_type)
     return HEADERLEN + SYS_SUCCESS_LEN;
 }
 
-int encode_sys_error_res(uint8_t buf[], uint8_t err)
+int encode_sys_error_res(uint8_t buf[], int err)
 {
+    uint8_t errcode;
+    char *msg;
+    int pos = HEADERLEN;
+    int len;
+    header_t header = {
+        SYS_ERROR,
+        CURRVER,
+        SYSID,
+        0
+    };
     switch(err)
     {
-        case EC_GENSERVER:
+        /* more added later */
+        case -1:
+            errcode = EC_GENSERVER;
+            msg = "Unrecognized Tag Type";
+            break;
+        case -2:
+            errcode = EC_GENSERVER;
+            msg = "Invalid Integer Length";
+            break;
+        case -3:
+            errcode = EC_GENSERVER;
+            msg = "Field Length of Zero";
+            break;
+        case -4:
+            errcode = EC_INVREQ;
+            msg = "Unrecognized Packet Type";
+            break;
+        case -5:
+            errcode = EC_INVREQ;
+            msg = "Unsupported Version";
             break;
         default:
-            
+            errcode = EC_GENSERVER;
+            msg = "Server Error";
     }
+    len = strlen(msg);
+    header.payload_len = (uint16_t)(U8ENCODELEN + len + 2); /* plus tag and len */
+    encode_header(buf, &header);
+    buf[pos++] = ASN_ENUM;
+    buf[pos++] = 1;
+    buf[pos++] = errcode;
+    buf[pos++] = ASN_STR;
+    buf[pos++] = (uint8_t)len;
+    memcpy(buf + pos, msg, len);
+    return HEADERLEN + U8ENCODELEN + len + 2;
 }
 
 int encode_acc_login_success_res(uint8_t buf[], uint16_t user_id)

@@ -54,6 +54,7 @@ int main(void)
             }
             continue;
         }
+        process_req(&data);
     }
 
 cleanup:
@@ -122,8 +123,22 @@ static void process_req(data_t *d)
     int result;
 
     result = decode_packet(buf, &header);
-    switch(result)
+    if(result < 0)
     {
+        send_sys_error(buf, d->cfd, result);
+        return;
+    }
+
+    if (header.packet_type == ACC_LOGIN)
+    {
+        send_acc_login_success(buf, d->cfd, 1); /* 1 for testing only */
+    }
+
+    if (header.packet_type == ACC_LOGOUT ||
+        header.packet_type == ACC_CREATE ||
+        header.packet_type == ACC_EDIT)
+    {
+        send_sys_success(buf, d->cfd, header.packet_type);
     }
 }
 
@@ -136,28 +151,8 @@ static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type)
 static void send_sys_error(uint8_t buf[], int fd, int err)
 {
     int len = 0;
-    uint8_t errcode = 0;
-    switch(err)
-    {
-        case -1:
-            errcode = EC_GENSERVER;
-            break;
-        case -2:
-            errcode = EC_GENSERVER;
-            break;
-        case -3:
-            errcode = EC_GENSERVER;
-            break;
-        case -4:
-            errcode = EC_GENSERVER;
-            break;
-        case -5:
-            errcode = EC_GENSERVER;
-            break;
-        default:
-            errcode = EC_GENSERVER;
-    }
-    len = encode_sys_error_res(buf, errcode);
+    len = encode_sys_error_res(buf, err);
+    write(fd, buf, len);
 }
 
 static void send_acc_login_success(uint8_t buf[], int fd, uint16_t user_id)
