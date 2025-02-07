@@ -1,7 +1,6 @@
 #include "../include/asn.h"
 #include "../include/setup.h"
 #include <netinet/in.h>
-#include <poll.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -20,21 +19,21 @@ typedef struct data_t
 
 static volatile sig_atomic_t running = 1;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
-static void setup(data_t *d, char s[INET_ADDRSTRLEN]);
-static void setup_sig_handler(void);
-static void sig_handler(int sig);
-static void cleanup(const data_t *d);
-static void process_req(const data_t *d);
-static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type);
-static void send_sys_error(uint8_t buf[], int fd, int err);
-static void send_acc_login_success(uint8_t buf[], int fd, uint16_t user_id);
+static void  setup(data_t *d, char s[INET_ADDRSTRLEN]);
+static void  setup_sig_handler(void);
+static void  sig_handler(int sig);
+static void  cleanup(const data_t *d);
+static void *process_req(void *arg);
+static void  send_sys_success(uint8_t buf[], int fd, uint8_t packet_type);
+static void  send_sys_error(uint8_t buf[], int fd, int err);
+static void  send_acc_login_success(uint8_t buf[], int fd, uint16_t user_id);
 
 int main(void)
 {
-    data_t        data = {0};
-    char          address_str[INET_ADDRSTRLEN];
-    int           retval = EXIT_SUCCESS;
-    struct pollfd fd;
+    data_t    data = {0};
+    char      address_str[INET_ADDRSTRLEN];
+    int       retval = EXIT_SUCCESS;
+    pthread_t thread;
 
     setup(&data, address_str);
 
@@ -44,16 +43,15 @@ int main(void)
         retval = EXIT_FAILURE;
         goto cleanup;
     }
-    fd.fd     = data.cfd;
-    fd.events = POLLIN;
 
     while(running)
     {
-        if(poll(&fd, 1, -1) == -1)
+        if(pthread_create(&thread, NULL, process_req, (void *)&data) != 0)
         {
+            perror("pthread_create");
             break;
         }
-        process_req(&data);
+        pthread_join(thread, NULL);
     }
 
 cleanup:
@@ -116,11 +114,12 @@ static void cleanup(const data_t *d)
     }
 }
 
-static void process_req(const data_t *d)
+static void *process_req(void *arg)
 {
-    header_t header = {0};
-    uint8_t  buf[PACKETLEN];
-    int      result;
+    const data_t *d      = (data_t *)arg;
+    header_t      header = {0};
+    uint8_t       buf[PACKETLEN];
+    int           result;
 
     read(d->cfd, buf, HEADERLEN);
     decode_header(buf, &header);
@@ -143,6 +142,7 @@ static void process_req(const data_t *d)
     {
         send_sys_success(buf, d->cfd, header.packet_type);
     }
+    return NULL;
 }
 
 static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type)
