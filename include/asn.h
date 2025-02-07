@@ -11,6 +11,11 @@
 #define U8ENCODELEN 3
 #define SYS_SUCCESS_LEN 3
 #define ACC_LOGIN_SUCCESS_LEN 4
+#define UNRECOGNIZEDTAGTYPE -1
+#define INVALIDINTEGERLENGTH -2
+#define FIELDLENGTHOFZERO -3
+#define UNRECOGNIZEDPACKETTYPE -4
+#define UNSUPPORTEDVERSION -5
 
 enum ASNTag
 {
@@ -59,7 +64,7 @@ typedef struct header_t
     uint16_t payload_len;
 } header_t;
 
-int decode_packet(uint8_t buf[], header_t *header);
+int decode_packet(const uint8_t buf[], header_t *header);
 int encode_sys_success_res(uint8_t buf[], uint8_t packet_type);
 int encode_sys_error_res(uint8_t buf[], int err);
 int encode_acc_login_success_res(uint8_t buf[], uint16_t user_id);
