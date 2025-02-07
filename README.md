@@ -27,5 +27,11 @@ Build using D'Arcy's build system:
 ## Usage
 
 ```sh
+make run
+```
+
+or
+
+```sh
 ./build/server
 ```

@@ -1,6 +1,7 @@
 #include "../include/asn.h"
 #include "../include/setup.h"
 #include <netinet/in.h>
+#include <poll.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -30,26 +31,32 @@ static void send_acc_login_success(uint8_t buf[], int fd, uint16_t user_id);
 
 int main(void)
 {
-    data_t data = {0};
-    char   address_str[INET_ADDRSTRLEN];
-    int    retval = EXIT_SUCCESS;
+    data_t        data = {0};
+    char          address_str[INET_ADDRSTRLEN];
+    int           retval = EXIT_SUCCESS;
+    struct pollfd fd;
 
     setup(&data, address_str);
 
+    data.cfd = accept(data.fd, NULL, 0);
+    if(data.cfd < 0)
+    {
+        retval = EXIT_FAILURE;
+        goto cleanup;
+    }
+    fd.fd     = data.cfd;
+    fd.events = POLLIN;
+
     while(running)
     {
-        data.cfd = accept(data.fd, NULL, 0);
-        if(data.cfd < 0)
+        if(poll(&fd, 1, -1) == -1)
         {
-            if(!running)
-            {
-                break;
-            }
-            continue;
+            break;
         }
         process_req(&data);
     }
 
+cleanup:
     cleanup(&data);
     exit(retval);
 }
