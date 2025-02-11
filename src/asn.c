@@ -11,6 +11,7 @@
  * -3 Field Length of Zero
  * -4 Unrecognized Packet Type
  * -5 Unsupported Version
+ * -6 Exceeded Max Payload Length
  */
 
 static int decode_uint8(const uint8_t buf[], int pos)
@@ -115,7 +116,8 @@ void decode_header(const uint8_t buf[], header_t *header)
 
 static int check_header(const header_t *header)
 {
-    uint8_t h = header->packet_type;
+    uint8_t  h = header->packet_type;
+    uint16_t plen;
 
     if(h != SYS_SUCCESS && h != SYS_ERROR && h != ACC_LOGIN && h != ACC_LOGIN_SUCCESS && h != ACC_LOGOUT && h != ACC_CREATE && h != ACC_EDIT && h != CHT_SEND && h != LST_GET && h != LST_RESPONSE && h != GRP_JOIN && h != GRP_EXIT && h != GRP_CREATE &&
        h != HST_GET)
@@ -131,6 +133,14 @@ static int check_header(const header_t *header)
         fprintf(stderr, "Unsupported Version: %u\n", h);
         return UNSUPPORTEDVERSION;
     }
+
+    plen = header->payload_len;
+    if(plen > MAXPAYLOADLEN)
+    {
+        fprintf(stderr, "Exceeded Max Payload Length\n");
+        return EXCEEDMAXPAYLOAD;
+    }
+
     return 0;
 }
 
@@ -249,6 +259,10 @@ int encode_sys_error_res(uint8_t buf[], int err)
         case UNSUPPORTEDVERSION:
             errcode = EC_INVREQ;
             msg     = "Unsupported Version";
+            break;
+        case EXCEEDMAXPAYLOAD:
+            errcode = EC_INVREQ;
+            msg     = "Exceeded Max Payload Length";
             break;
         default:
             errcode = EC_GENSERVER;

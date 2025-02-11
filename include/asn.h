@@ -6,6 +6,7 @@
 #define HEADERLEN 6
 #define TIMESTRLEN 15
 #define PACKETLEN 777
+#define MAXPAYLOADLEN 771 /* This is the size of 3 strings + taglen */
 #define SYSID 0
 #define CURRVER 1
 #define U8ENCODELEN 3
@@ -16,6 +17,7 @@
 #define FIELDLENGTHOFZERO -3
 #define UNRECOGNIZEDPACKETTYPE -4
 #define UNSUPPORTEDVERSION -5
+#define EXCEEDMAXPAYLOAD -6
 
 enum ASNTag
 {
