@@ -23,7 +23,6 @@ static volatile sig_atomic_t running = 1;    // NOLINT(cppcoreguidelines-avoid-n
 static void setup(data_t *d, char s[INET_ADDRSTRLEN]);
 static void setup_sig_handler(void);
 static void sig_handler(int sig);
-static void cleanup(const data_t *d);
 static void process_req(const data_t *d);
 static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type);
 static void send_sys_error(uint8_t buf[], int fd, int err);
@@ -57,7 +56,11 @@ int main(void)
     }
 
 cleanup:
-    cleanup(&data);
+    close(data.fd);
+    if(data.cfd > -1)
+    {
+        close(data.cfd);
+    }
     exit(retval);
 }
 
@@ -106,15 +109,6 @@ static void sig_handler(int sig)
 }
 
 #pragma GCC diagnostic pop
-
-static void cleanup(const data_t *d)
-{
-    close(d->fd);
-    if(d->cfd > 0)
-    {
-        close(d->cfd);
-    }
-}
 
 static void process_req(const data_t *d)
 {
