@@ -1,8 +1,6 @@
 #include "../include/asn.h"
 #include "../include/setup.h"
 #include <netinet/in.h>
-#include <poll.h>
-#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,17 +21,16 @@ static volatile sig_atomic_t running = 1;    // NOLINT(cppcoreguidelines-avoid-n
 static void setup(data_t *d, char s[INET_ADDRSTRLEN]);
 static void setup_sig_handler(void);
 static void sig_handler(int sig);
-static void process_req(const data_t *d);
+static int process_req(const data_t *d);
 static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type);
 static void send_sys_error(uint8_t buf[], int fd, int err);
 static void send_acc_login_success(uint8_t buf[], int fd, uint16_t user_id);
 
 int main(void)
 {
-    data_t        data = {0};
-    char          address_str[INET_ADDRSTRLEN];
-    int           retval = EXIT_SUCCESS;
-    struct pollfd fd;
+    data_t data = {0};
+    char   address_str[INET_ADDRSTRLEN];
+    int    retval = EXIT_SUCCESS;
 
     setup(&data, address_str);
 
@@ -43,16 +40,20 @@ int main(void)
         retval = EXIT_FAILURE;
         goto cleanup;
     }
-    fd.fd     = data.cfd;
-    fd.events = POLLIN;
-
     while(running)
     {
-        if(poll(&fd, 1, -1) == -1)
+        if(data.cfd < 0)
         {
+            if(running) {
+                printf("Connection ended\n");
+            }
             break;
         }
-        process_req(&data);
+        if(process_req(&data) == -1)
+        {
+            printf("End of Read\n");
+            break;
+        }
     }
 
 cleanup:
@@ -110,32 +111,43 @@ static void sig_handler(int sig)
 
 #pragma GCC diagnostic pop
 
-static void process_req(const data_t *d)
+static int process_req(const data_t *d)
 {
     header_t header = {0};
     uint8_t  buf[PACKETLEN];
     int      result;
+    size_t bytes_read;
 
-    read(d->cfd, buf, HEADERLEN);
+    memset(buf, 0, PACKETLEN);
+    if(read(d->cfd, buf, HEADERLEN) < HEADERLEN)
+    {
+        return -1;
+    }
     decode_header(buf, &header);
 
-    read(d->cfd, buf + HEADERLEN, header.payload_len);
+    if(read(d->cfd, buf + HEADERLEN, header.payload_len) < header.payload_len)
+    {
+        return -1;
+    }
     result = decode_packet(buf, &header);
 
     memset(buf, 0, PACKETLEN);
     if(result < 0)
     {
         send_sys_error(buf, d->cfd, result);
+        return SYS_ERROR;
     }
 
     if(header.packet_type == ACC_LOGIN)
     {
         send_acc_login_success(buf, d->cfd, 1); /* 1 for testing only */
+        return ACC_LOGIN_SUCCESS;
     }
 
     if(header.packet_type == ACC_LOGOUT || header.packet_type == ACC_CREATE || header.packet_type == ACC_EDIT)
     {
         send_sys_success(buf, d->cfd, header.packet_type);
+        return SYS_SUCCESS;
     }
 }
 
@@ -147,8 +159,7 @@ static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type)
 
 static void send_sys_error(uint8_t buf[], int fd, int err)
 {
-    int len = 0;
-    len     = encode_sys_error_res(buf, err);
+    int len = encode_sys_error_res(buf, err);
     write(fd, buf, (size_t)len);
 }
 

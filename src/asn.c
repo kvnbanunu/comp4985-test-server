@@ -56,7 +56,7 @@ static int decode_int(const uint8_t buf[], int pos)
 static int decode_enum(const uint8_t buf[], int pos)
 {
     printf("Enum: %u\n", buf[pos + 1]);
-    return 1;
+    return 1 + 1;
 }
 
 /* following ASN_STR tag, pos would land on len */
