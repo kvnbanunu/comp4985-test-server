@@ -149,6 +149,7 @@ static int process_req(const data_t *d)
         send_sys_success(buf, d->cfd, header.packet_type);
         return SYS_SUCCESS;
     }
+    return -1;
 }
 
 static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type)
