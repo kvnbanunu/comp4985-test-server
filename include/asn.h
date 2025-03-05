@@ -18,6 +18,7 @@
 #define UNRECOGNIZEDPACKETTYPE -4
 #define UNSUPPORTEDVERSION -5
 #define EXCEEDMAXPAYLOAD -6
+#define INVALIDTAGTYPE -7
 
 enum ASNTag
 {
@@ -42,10 +43,6 @@ enum Packet_Type
     CHT_SEND = 20,
     LST_GET = 30,
     LST_RESPONSE,
-    GRP_JOIN = 40,
-    GRP_EXIT,
-    GRP_CREATE,
-    HST_GET = 50
 };
 
 enum Error_Code
@@ -71,5 +68,6 @@ int decode_packet(const uint8_t buf[], const header_t *header);
 int encode_sys_success_res(uint8_t buf[], uint8_t packet_type);
 int encode_sys_error_res(uint8_t buf[], int err);
 int encode_acc_login_success_res(uint8_t buf[], uint16_t user_id);
+int encode_cht_send(uint8_t buf[]);
 
 #endif // ASN_H

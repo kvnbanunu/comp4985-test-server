@@ -25,6 +25,7 @@ static int process_req(const data_t *d);
 static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type);
 static void send_sys_error(uint8_t buf[], int fd, int err);
 static void send_acc_login_success(uint8_t buf[], int fd, uint16_t user_id);
+static void send_cht_send(uint8_t buf[], int fd);
 
 int main(void)
 {
@@ -149,6 +150,13 @@ static int process_req(const data_t *d)
         send_sys_success(buf, d->cfd, header.packet_type);
         return SYS_SUCCESS;
     }
+
+    if(header.packet_type == CHT_SEND)
+    {
+        send_sys_success(buf, d->cfd, header.packet_type);
+        send_cht_send(buf, d->cfd);
+        return CHT_SEND;
+    }
     return -1;
 }
 
@@ -167,5 +175,11 @@ static void send_sys_error(uint8_t buf[], int fd, int err)
 static void send_acc_login_success(uint8_t buf[], int fd, uint16_t user_id)
 {
     int len = encode_acc_login_success_res(buf, user_id);
+    write(fd, buf, (size_t)len);
+}
+
+static void send_cht_send(uint8_t buf[], int fd)
+{
+    int len = encode_cht_send(buf);
     write(fd, buf, (size_t)len);
 }

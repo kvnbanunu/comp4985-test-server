@@ -119,8 +119,7 @@ static int check_header(const header_t *header)
     uint8_t  h = header->packet_type;
     uint16_t plen;
 
-    if(h != SYS_SUCCESS && h != SYS_ERROR && h != ACC_LOGIN && h != ACC_LOGIN_SUCCESS && h != ACC_LOGOUT && h != ACC_CREATE && h != ACC_EDIT && h != CHT_SEND && h != LST_GET && h != LST_RESPONSE && h != GRP_JOIN && h != GRP_EXIT && h != GRP_CREATE &&
-       h != HST_GET)
+    if(h != SYS_SUCCESS && h != SYS_ERROR && h != ACC_LOGIN && h != ACC_LOGIN_SUCCESS && h != ACC_LOGOUT && h != ACC_CREATE && h != ACC_EDIT && h != CHT_SEND && h != LST_GET && h != LST_RESPONSE)
     {
         fprintf(stderr, "Unrecognized Packet Type: %u\n", h);
         return UNRECOGNIZEDPACKETTYPE;
@@ -290,4 +289,33 @@ int encode_acc_login_success_res(uint8_t buf[], uint16_t user_id)
     buf[pos++] = (uint8_t)sizeof(uint16_t);
     memcpy(buf + pos, &copy, sizeof(uint16_t));
     return HEADERLEN + ACC_LOGIN_SUCCESS_LEN;
+}
+
+int encode_cht_send(uint8_t buf[])
+{
+    // hardcoded packet
+    int pos = HEADERLEN;
+    const uint16_t id = (uint16_t)69420;
+    const char *timestamp = "20250304160000Z";
+    const char *content = "Hello from the test server";
+    const char *username = "Banunu";
+    size_t len = strlen(timestamp);
+    header_t header = {CHT_SEND, CURRVER, id, 0};
+
+    buf[pos++] = ASN_TIME;
+    buf[pos++] = (uint8_t)len;
+    memcpy(buf + pos, timestamp, len);
+    pos += (int)len;
+    len = strlen(content);
+    buf[pos++] = ASN_STR;
+    buf[pos++] = (uint8_t)len;
+    memcpy(buf + pos, content, len);
+    pos += (int)len;
+    len = strlen(username);
+    buf[pos++] = ASN_STR;
+    buf[pos++] = (uint8_t)len;
+    memcpy(buf + pos, content, len);
+    header.payload_len = (uint16_t)(pos + (int)len - HEADERLEN);
+    encode_header(buf, &header);
+    return header.payload_len + HEADERLEN;
 }
