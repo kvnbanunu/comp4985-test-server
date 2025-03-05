@@ -21,7 +21,7 @@ static volatile sig_atomic_t running = 1;    // NOLINT(cppcoreguidelines-avoid-n
 static void setup(data_t *d, char s[INET_ADDRSTRLEN]);
 static void setup_sig_handler(void);
 static void sig_handler(int sig);
-static int process_req(const data_t *d);
+static int  process_req(const data_t *d);
 static void send_sys_success(uint8_t buf[], int fd, uint8_t packet_type);
 static void send_sys_error(uint8_t buf[], int fd, int err);
 static void send_acc_login_success(uint8_t buf[], int fd, uint16_t user_id);
@@ -35,6 +35,7 @@ int main(void)
 
     setup(&data, address_str);
 
+    // This program is only used to test 1 client, so the program will end when the client connects or errors.
     data.cfd = accept(data.fd, NULL, 0);
     if(data.cfd < 0)
     {
@@ -45,7 +46,8 @@ int main(void)
     {
         if(data.cfd < 0)
         {
-            if(running) {
+            if(running)
+            {
                 printf("Connection ended\n");
             }
             break;
@@ -117,7 +119,6 @@ static int process_req(const data_t *d)
     header_t header = {0};
     uint8_t  buf[PACKETLEN];
     int      result;
-    size_t bytes_read;
 
     memset(buf, 0, PACKETLEN);
     if(read(d->cfd, buf, HEADERLEN) < HEADERLEN)
@@ -145,15 +146,23 @@ static int process_req(const data_t *d)
         return ACC_LOGIN_SUCCESS;
     }
 
-    if(header.packet_type == ACC_LOGOUT || header.packet_type == ACC_CREATE || header.packet_type == ACC_EDIT)
+    if(header.packet_type == ACC_CREATE || header.packet_type == ACC_EDIT)
     {
         send_sys_success(buf, d->cfd, header.packet_type);
         return SYS_SUCCESS;
     }
 
+    if(header.packet_type == ACC_LOGOUT)
+    {
+        // no response
+        return ACC_LOGOUT;
+    }
+
     if(header.packet_type == CHT_SEND)
     {
         send_sys_success(buf, d->cfd, header.packet_type);
+
+        // send an example of a chat message from another user.
         send_cht_send(buf, d->cfd);
         return CHT_SEND;
     }
