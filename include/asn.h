@@ -8,7 +8,7 @@
 #define PACKETLEN 777
 #define MAXPAYLOADLEN 771 /* This is the size of 3 strings + taglen */
 #define SYSID 0
-#define CURRVER 2
+#define CURRVER 3
 #define U8ENCODELEN 3
 #define SYS_SUCCESS_LEN 3
 #define ACC_LOGIN_SUCCESS_LEN 4

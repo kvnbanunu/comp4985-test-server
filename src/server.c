@@ -160,8 +160,6 @@ static int process_req(const data_t *d)
 
     if(header.packet_type == CHT_SEND)
     {
-        send_sys_success(buf, d->cfd, header.packet_type);
-
         // send an example of a chat message from another user.
         send_cht_send(buf, d->cfd);
         return CHT_SEND;
